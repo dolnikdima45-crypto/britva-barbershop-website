@@ -1,0 +1,420 @@
+/* Підключаємо стильний шрифт */
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;500;700&display=swap');
+
+body {
+  margin: 0;
+  background-color: #0d0d0d; 
+  color: #ffffff;
+  font-family: 'Oswald', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.App {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Заголовок */
+.main-title {
+  text-align: center;
+  font-size: 3.5rem;
+  color: #ffcc00;
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  margin-top: 50px;
+  margin-bottom: 50px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Контейнер карток */
+.barber-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  padding: 20px;
+}
+
+/* Картка барбера */
+.barber-card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.barber-card:hover {
+  transform: translateY(-10px);
+  border-color: #ffcc00;
+  box-shadow: 0 10px 30px rgba(255, 204, 0, 0.2);
+}
+
+.barber-card img {
+    width: 100%;
+    height: 350px; 
+    object-fit: cover;
+    border-radius: 10px;
+    filter: grayscale(30%); 
+    transition: 0.5s;
+    background-color: #f5f5f5; 
+}
+
+.barber-card:hover img {
+    filter: grayscale(0%);
+    transform: scale(1.02);
+}
+
+
+.spec-text {
+    color: #888;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    padding: 0 10px;
+}
+
+.barber-card h3 {
+  color: #ffcc00;
+  margin: 15px 0 5px;
+  font-size: 1.5rem;
+}
+
+.barber-card p {
+  color: #888;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+/* Кнопки */
+.book-btn, .confirm-btn, .admin-btn {
+  background: #ffcc00;
+  color: #000;
+  border: none;
+  padding: 12px 25px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: 0.3s;
+}
+
+.book-btn:hover, .confirm-btn:hover {
+  background: #fff;
+  transform: scale(1.05);
+}
+
+.admin-btn {
+  background: transparent;
+  color: #ffcc00;
+  border: 1px solid #ffcc00;
+}
+
+.admin-btn:hover {
+  background: #ffcc00;
+  color: #000;
+}
+
+/* Модальне вікно */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: #111;
+  padding: 40px;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #333;
+  box-shadow: 0 0 50px rgba(0,0,0,1);
+}
+
+.modal-content input, .service-select, .date-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  background: #222;
+  border: 1px solid #444;
+  color: white;
+  border-radius: 5px;
+  font-family: 'Oswald', sans-serif;
+}
+
+.cancel-btn {
+  background: transparent;
+  color: #666;
+  border: none;
+  width: 100%;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  color: #fff;
+}
+
+/* Таблиця адміна */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 30px;
+  background: #1a1a1a;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.admin-table th {
+  background: #ffcc00;
+  color: #000;
+  padding: 15px;
+  text-transform: uppercase;
+}
+
+.admin-table td {
+  padding: 15px;
+  border-bottom: 1px solid #333;
+  color: #ccc;
+}
+
+.delete-btn-table {
+  background: #ff4444;
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.delete-btn-table:hover {
+  background: #cc0000;
+}
+.exp-badge {
+    background: #ffcc00;
+    color: black;
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    padding: 5px 12px;
+    font-weight: bold;
+    border-radius: 5px;
+    font-size: 0.8rem;
+}
+
+.spec-text {
+    color: #aaa;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    min-height: 40px;
+}
+
+.comment-textarea {
+    width: 100%;
+    height: 80px;
+    background: #222;
+    border: 1px solid #444;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-family: 'Oswald', sans-serif;
+    resize: none;
+}
+
+.rank-text {
+    font-weight: bold;
+    color: #ffcc00 !important;
+}
+.booking-modal {
+    max-width: 800px !important; 
+}
+
+.booking-flex {
+    display: flex;
+    gap: 30px;
+}
+
+.booking-form-side {
+    flex: 1;
+}
+
+.busy-times-side {
+    flex: 1;
+    background: #1a1a1a;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 2px solid #ffcc00;
+}
+
+.times-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.busy-slot {
+    background: #333;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    color: #ffcc00;
+}
+
+.input-label {
+    display: block;
+    margin-top: 10px;
+    color: #888;
+    font-size: 0.8rem;
+}
+
+/* Стилізація календаря */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); 
+}
+
+/* Навігація */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 50px;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid #333;
+}
+
+.logo {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffcc00;
+  letter-spacing: 5px;
+}
+
+.nav-links button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.2rem;
+  margin: 0 20px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: 0.3s;
+  padding-bottom: 5px;
+}
+
+.nav-links button.active {
+  color: #ffcc00;
+  border-bottom: 2px solid #ffcc00;
+}
+
+/* Головна сторінка */
+.hero-section {
+  height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+  background-size: cover;
+  background-position: center;
+}
+
+.hero-section h1 {
+  font-size: 4rem;
+  color: #ffcc00;
+  margin-bottom: 10px;
+}
+
+.book-btn-hero {
+  margin-top: 20px;
+  padding: 15px 40px;
+  background: #ffcc00;
+  border: none;
+  font-family: 'Oswald', sans-serif;
+  font-weight: bold;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.book-btn-hero:hover {
+  background: #fff;
+  transform: translateY(-3px);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 50px;
+  background: #111;
+}
+
+.info-card {
+  text-align: center;
+  padding: 30px;
+  border: 1px solid #222;
+  transition: 0.3s;
+}
+
+.info-card:hover {
+  border-color: #ffcc00;
+}
+
+.info-card h3 {
+  color: #ffcc00;
+  margin-bottom: 15px;
+}
+
+.about-section {
+  padding: 80px 50px;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.about-section h2 {
+  font-size: 2.5rem;
+  color: #ffcc00;
+  margin-bottom: 30px;
+}
+
+.about-content p {
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: #ccc;
+}
+
+.facts-list {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 50px;
+}
+
+.fact-item {
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.fact-item strong {
+  display: block;
+  font-size: 2rem;
+  color: #ffcc00;
+}
