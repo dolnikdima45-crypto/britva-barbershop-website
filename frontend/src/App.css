@@ -418,3 +418,54 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   font-size: 2rem;
   color: #ffcc00;
 }
+
+.user-logged-zone {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-greeting {
+  color: #fff;
+  font-size: 15px;
+}
+
+.user-greeting strong {
+  color: #c5a880;
+}
+
+.logout-btn {
+  background: #c53030;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.logout-btn:hover {
+  background: #9b2c2c;
+}
+
+.admin-badge-btn {
+  border: 1px solid #c5a880;
+  color: #c5a880;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.toggle-auth-mode {
+  text-align: center;
+  margin-top: 15px;
+  color: #c5a880;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 14px;
+}
+
+.toggle-auth-mode:hover {
+  color: #fff;
+}
