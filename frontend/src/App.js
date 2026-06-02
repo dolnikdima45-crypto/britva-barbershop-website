@@ -30,18 +30,18 @@ function App() {
 
   // Завантаження базових даних
   useEffect(() => {
-    axios.get('http://localhost:5000/api/barbers').then(res => setBarbers(res.data));
-    axios.get('http://localhost:5000/api/services').then(res => setServices(res.data));
-    axios.get('http://localhost:5000/api/appointments').then(res => setAppointments(res.data));
-    axios.get('http://localhost:5000/api/absences').then(res => setAbsences(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/barbers').then(res => setBarbers(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/services').then(res => setServices(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/appointments').then(res => setAppointments(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/absences').then(res => setAbsences(res.data));
   }, [view]);
 
   const fetchAppointments = () => {
-    axios.get('http://localhost:5000/api/appointments').then(res => setAppointments(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/appointments').then(res => setAppointments(res.data));
   };
 
   const fetchAbsences = () => {
-    axios.get('http://localhost:5000/api/absences').then(res => setAbsences(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/absences').then(res => setAbsences(res.data));
   };
 
   // Валідатори введення інформації
@@ -62,14 +62,14 @@ function App() {
   const handleAuthSubmit = (e) => {
     e.preventDefault();
     if (isRegisterMode) {
-      axios.post('http://localhost:5000/api/register', { username: authLogin, password: authPassword })
+      axios.post('https://britva-barbershop-website.onrender.com/register', { username: authLogin, password: authPassword })
         .then(res => {
           alert(res.data.message);
           setIsRegisterMode(false);
         })
         .catch(err => alert(err.response?.data?.message || "Помилка реєстрації"));
     } else {
-      axios.post('http://localhost:5000/api/login', { username: authLogin, password: authPassword })
+      axios.post('https://britva-barbershop-website.onrender.com/login', { username: authLogin, password: authPassword })
         .then(res => {
           if (res.data.success) {
             const loggedUser = res.data.user;
@@ -123,7 +123,7 @@ function App() {
       return;
     }
 
-    axios.post('http://localhost:5000/api/appointments', {
+    axios.post('https://britva-barbershop-website.onrender.com/appointments', {
       client_name: formData.name,
       client_phone: formData.phone,
       barber_id: selectedBarber.id,
@@ -145,7 +145,7 @@ function App() {
   // АДМІН: РУЧНЕ ВИДАЛЕННЯ ЗАПИСУ КЛІЄНТА
   const handleDeleteAppointment = (id) => {
     if (window.confirm("Ви впевнені, що хочете видалити цей запис клієнта?")) {
-      axios.delete(`http://localhost:5000/api/appointments/${id}`)
+      axios.delete(`https://britva-barbershop-website.onrender.com/api/appointments/${id}`)
         .then(() => {
           setAppointments(prev => prev.filter(app => app.id !== id));
           alert("Запис видалено з бази");
@@ -157,7 +157,7 @@ function App() {
   // Адмін: Додавання відсутності майстра
   const handleAddAbsence = (e) => {
     e.preventDefault();
-    axios.post('http://localhost:5000/api/absences', newAbsence)
+    axios.post('https://britva-barbershop-website.onrender.com/api/absences', newAbsence)
         .then(() => {
             alert("Статус майстра оновлено");
             fetchAbsences();
@@ -168,7 +168,7 @@ function App() {
 
   // Адмін: Видалення відсутності майстра
   const handleDeleteAbsence = (id) => {
-    axios.delete(`http://localhost:5000/api/absences/${id}`)
+    axios.delete(`https://britva-barbershop-website.onrender.com/api/absences/${id}`)
         .then(() => {
             setAbsences(prev => prev.filter(abs => abs.id !== id));
         })
