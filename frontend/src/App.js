@@ -30,18 +30,18 @@ function App() {
 
   // Завантаження базових даних
   useEffect(() => {
-    axios.get('https://britva-barbershop-website.onrender.com/barbers').then(res => setBarbers(res.data));
-    axios.get('https://britva-barbershop-website.onrender.com/services').then(res => setServices(res.data));
-    axios.get('https://britva-barbershop-website.onrender.com/appointments').then(res => setAppointments(res.data));
-    axios.get('https://britva-barbershop-website.onrender.com/absences').then(res => setAbsences(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/api/barbers').then(res => setBarbers(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/api/services').then(res => setServices(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/api/appointments').then(res => setAppointments(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/api/absences').then(res => setAbsences(res.data));
   }, [view]);
 
   const fetchAppointments = () => {
-    axios.get('https://britva-barbershop-website.onrender.com/appointments').then(res => setAppointments(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/api/appointments').then(res => setAppointments(res.data));
   };
 
   const fetchAbsences = () => {
-    axios.get('https://britva-barbershop-website.onrender.com/absences').then(res => setAbsences(res.data));
+    axios.get('https://britva-barbershop-website.onrender.com/api/absences').then(res => setAbsences(res.data));
   };
 
   // Валідатори введення інформації
@@ -62,14 +62,14 @@ function App() {
   const handleAuthSubmit = (e) => {
     e.preventDefault();
     if (isRegisterMode) {
-      axios.post('https://britva-barbershop-website.onrender.com/register', { username: authLogin, password: authPassword })
+      axios.post('https://britva-barbershop-website.onrender.com/api/register', { username: authLogin, password: authPassword })
         .then(res => {
           alert(res.data.message);
           setIsRegisterMode(false);
         })
         .catch(err => alert(err.response?.data?.message || "Помилка реєстрації"));
     } else {
-      axios.post('https://britva-barbershop-website.onrender.com/login', { username: authLogin, password: authPassword })
+      axios.post('https://britva-barbershop-website.onrender.com/api/login', { username: authLogin, password: authPassword })
         .then(res => {
           if (res.data.success) {
             const loggedUser = res.data.user;
@@ -123,7 +123,7 @@ function App() {
       return;
     }
 
-    axios.post('https://britva-barbershop-website.onrender.com/appointments', {
+    axios.post('https://britva-barbershop-website.onrender.com/api/appointments', {
       client_name: formData.name,
       client_phone: formData.phone,
       barber_id: selectedBarber.id,
