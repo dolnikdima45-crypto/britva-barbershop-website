@@ -2,7 +2,118 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
+// 1. Словник перекладів для статичного інтерфейсу сайту та адмінки
+const translations = {
+  ua: {
+    title: "BRITVA",
+    home: "Головна",
+    booking: "Онлайн-запис",
+    cabinet: "Особистий кабінет",
+    heroTitle: "БІЛЬШЕ НІЖ ПРОСТО СТРИЖКА",
+    heroSub: "Створюємо бездоганний чоловічий стиль та культуру догляду з 2018 року",
+    heroBtn: "Забронювати візит",
+    locationTitle: "Локація простору",
+    locationDesc: "м. Полтава, вул. Велика Тирнівська, 42",
+    parkingDesc: "Зручна парковка поблизу ТЦ \"Київ\"",
+    hoursTitle: "Час роботи",
+    hoursDesc: "Щодня: 09:00 — 17:00",
+    hoursSub: "Працюємо без вихідних та перерв",
+    contactTitle: "Прямий зв'язок",
+    aboutTitle: "Про концепцію BRITVA BARBERSHOP",
+    aboutText: "Ми відкрили свої двері 14 жовтня 2018 року. Почавши шлях усього з двох крісел, наш простір трансформувався в провідний клуб чоловічого стилю. Філософія BRITVA — це безкомпромісна увага до деталей, збереження традицій класичного небезпечного гоління та створення преміального сервісу для кожного гостя.",
+    factClients: "задоволених чоловіків",
+    factSterile: "медична стерильність інструментів",
+    factBar: "свіжозмелена кава та міцні напої",
+    chooseBarberTitle: "Оберіть свого майстра",
+    experience: "Стаж",
+    selectBarberBtn: "Обрати майстра",
+    modalTitle: "Ваш візит до",
+    inputName: "Введіть ваше ім'я",
+    inputPhone: "Номер телефону",
+    selectServicePlaceholder: "Виберіть необхідну послугу",
+    labelDateTime: "Бажана дата та час початку візиту:",
+    commentPlaceholder: "Особливі побажання до майстра або коментар...",
+    confirmBookingBtn: "Підтвердити запис",
+    cancelBtn: "Скасувати",
+    busySlotsTitle: "Зайняті слоти:",
+    greeting: "Вітаємо",
+    adminToSite: "До сайту",
+    adminPanel: "Панель керування",
+    logout: "Вийти"
+  },
+  en: {
+    title: "BRITVA",
+    home: "Home",
+    booking: "Online Booking",
+    cabinet: "Personal Cabinet",
+    heroTitle: "MORE THAN JUST A HAIRCUT",
+    heroSub: "Creating flawless men's style and grooming culture since 2018",
+    heroBtn: "Book a Visit",
+    locationTitle: "Space Location",
+    locationDesc: "42 Velyka Tyrnivska St, Poltava",
+    parkingDesc: "Convenient parking near TC \"Kyiv\"",
+    hoursTitle: "Working Hours",
+    hoursDesc: "Every day: 09:00 — 17:00",
+    hoursSub: "We work without weekends and breaks",
+    contactTitle: "Direct Contact",
+    aboutTitle: "About the BRITVA BARBERSHOP Concept",
+    aboutText: "We opened our doors on October 14, 2018. Starting with just two chairs, our space has transformed into a leading men's style club. The BRITVA philosophy is uncompromising attention to detail, preserving the traditions of classic straight shaving, and creating premium service for every guest.",
+    factClients: "satisfied men",
+    factSterile: "medical sterility of instruments",
+    factBar: "freshly ground coffee & strong drinks",
+    chooseBarberTitle: "Choose your barber",
+    experience: "Exp",
+    selectBarberBtn: "Select Barber",
+    modalTitle: "Your visit to",
+    inputName: "Enter your name",
+    inputPhone: "Phone number",
+    selectServicePlaceholder: "Select the required service",
+    labelDateTime: "Desired date and start time of the visit:",
+    commentPlaceholder: "Special wishes for the barber or comment...",
+    confirmBookingBtn: "Confirm Booking",
+    cancelBtn: "Cancel",
+    busySlotsTitle: "Busy slots:",
+    greeting: "Welcome",
+    adminToSite: "To Site",
+    adminPanel: "Admin Panel",
+    logout: "Logout"
+  }
+};
+
+// 2. Мапа перекладів динамічних даних, що прилітають із бази даних MySQL
+const dbTranslations = {
+  en: {
+    // Імена майстрів
+    "Олександр Степашко": "Oleksandr Stepashko",
+    "Маркус Тейлор": "Marcus Taylor",
+    "Микита Феничко": "Mykyta Fenychko",
+    // Ранги майстрів
+    "Топ-барбер": "Top Barber",
+    "Старший майстер": "Senior Barber",
+    "Барбер": "Barber",
+    // Стаж роботи
+    "5 років": "5 years",
+    "3 роки": "3 years",
+    "4 роки": "4 years",
+    // Спеціалізації
+    "Експерт з догляду за бородою та класичних стрижок": "Expert in beard care and classic haircuts",
+    "Майстер сучасних технік фейду та Hair Tattoo": "Master of modern fade techniques and Hair Tattoo",
+    "Майстер подовжених стрижок та класичного гоління": "Master of long haircuts and classic straight shaving"
+  }
+};
+
 function App() {
+  const [lang, setLang] = useState('ua');
+  const t = translations[lang];
+
+  // Функція для підміни українського тексту з БД на англійський, якщо обрано режим 'en'
+  const translateDbText = (text) => {
+    if (lang === 'en' && dbTranslations.en[text]) {
+      return dbTranslations.en[text];
+    }
+    return text;
+  };
+
   // Навігація та вкладки
   const [activeTab, setActiveTab] = useState('home'); // 'home' або 'booking'
   const [view, setView] = useState('client'); // 'client', 'auth', 'admin'
@@ -182,66 +293,73 @@ function App() {
     <div className="App">
       {/* ВЕРХНЯ НАВІГАЦІЯ */}
       <header className="navbar">
-        <div className="logo" onClick={() => { setActiveTab('home'); setView('client'); }}>BRITVA</div>
+        <div className="logo" onClick={() => { setActiveTab('home'); setView('client'); }}>{t.title}</div>
         <nav className="nav-links">
-          <button className={activeTab === 'home' && view === 'client' ? 'active' : ''} onClick={() => { setActiveTab('home'); setView('client'); }}>Головна</button>
-          <button className={activeTab === 'booking' && view === 'client' ? 'active' : ''} onClick={() => { setActiveTab('booking'); setView('client'); }}>Онлайн-запис</button>
+          <button className={activeTab === 'home' && view === 'client' ? 'active' : ''} onClick={() => { setActiveTab('home'); setView('client'); }}>{t.home}</button>
+          <button className={activeTab === 'booking' && view === 'client' ? 'active' : ''} onClick={() => { setActiveTab('booking'); setView('client'); }}>{t.booking}</button>
         </nav>
+        
+        {/* КНОПКИ ПЕРЕМИКАННЯ МОВИ */}
+        <div className="lang-switcher" style={{ display: 'flex', gap: '10px', marginLeft: '20px', alignItems: 'center' }}>
+          <button onClick={() => setLang('ua')} style={{ background: 'none', border: 'none', color: lang === 'ua' ? '#ffcc00' : '#fff', cursor: 'pointer', fontFamily: 'Oswald', fontWeight: 'bold', fontSize: '1.1rem' }}>UA</button>
+          <span style={{ color: '#333' }}>|</span>
+          <button onClick={() => setLang('en')} style={{ background: 'none', border: 'none', color: lang === 'en' ? '#ffcc00' : '#fff', cursor: 'pointer', fontFamily: 'Oswald', fontWeight: 'bold', fontSize: '1.1rem' }}>EN</button>
+        </div>
         
         <div className="auth-zone-header">
           {currentUser ? (
             <div className="user-logged-zone">
-              <span className="user-greeting">Вітаємо, <strong>{currentUser.username}</strong>!</span>
+              <span className="user-greeting">{t.greeting}, <strong>{currentUser.username}</strong>!</span>
               {currentUser.role === 'admin' && (
                 <button onClick={() => setView(view === 'admin' ? 'client' : 'admin')} className="admin-badge-btn">
-                  {view === 'admin' ? 'До сайту' : 'Панель керування'}
+                  {view === 'admin' ? t.adminToSite : t.adminPanel}
                 </button>
               )}
-              <button onClick={handleLogout} className="logout-btn">Вийти</button>
+              <button onClick={handleLogout} className="logout-btn">{t.logout}</button>
             </div>
           ) : (
             <button className="admin-btn" onClick={() => setView('auth')}>
-              Особистий кабінет
+              {t.cabinet}
             </button>
           )}
         </div>
       </header>
 
-      {/* ВКЛАДКА: ГОЛОВНА (ОНОВЛЕНИЙ КОПІРАЙТИНГ) */}
+      {/* ВКЛАДКА: ГОЛОВНА */}
       {activeTab === 'home' && view === 'client' && (
         <div className="home-page">
           <section className="hero-section">
-            <h1>БІЛЬШЕ НІЖ ПРОСТО СТРИЖКА</h1>
-            <p>Створюємо бездоганний чоловічий стиль та культуру догляду з 2018 року</p>
-            <button className="book-btn-hero" onClick={() => setActiveTab('booking')}>Забронювати візит</button>
+            <h1>{t.heroTitle}</h1>
+            <p>{t.heroSub}</p>
+            <button className="book-btn-hero" onClick={() => setActiveTab('booking')}>{t.heroBtn}</button>
           </section>
 
           <section className="info-grid">
             <div className="info-card">
-              <h3>Локація простору</h3>
-              <p>м. Полтава, вул. Велика Тирнівська, 42</p>
-              <p>Зручна парковка поблизу ТЦ "Київ"</p>
+              <h3>{t.locationTitle}</h3>
+              <p>{t.locationDesc}</p>
+              <p>{t.parkingDesc}</p>
             </div>
             <div className="info-card">
-              <h3>Час роботи</h3>
-              <p>Щодня: 09:00 — 17:00</p>
-              <p>Працюємо без вихідних та перерв</p>
+              <h3>{t.hoursTitle}</h3>
+              <p>{t.hoursDesc}</p>
+              <p>{t.hoursSub}</p>
             </div>
             <div className="info-card">
-              <h3>Прямий зв'язок</h3>
+              <h3>{t.contactTitle}</h3>
               <p>+38 (044) 123-45-67</p>
               <p>britva.barber@gmail.com</p>
             </div>
           </section>
 
           <section className="about-section">
-            <h2>Про концепцію BRITVA BARBERSHOP</h2>
+            <h2>{t.aboutTitle}</h2>
             <div className="about-content">
-              <p>Ми відкрили свої двері 14 жовтня 2018 року. Почавши шлях усього з двох крісел, наш простір трансформувався в провідний клуб чоловічого стилю. Філософія BRITVA — це безкомпромісна увага до деталей, збереження традицій класичного небезпечного гоління та створення преміального сервісу для кожного гостя.</p>
+              <p>{t.aboutText}</p>
               <div className="facts-list">
-                <div className="fact-item"><strong>15,000+</strong> задоволених чоловіків</div>
-                <div className="fact-item"><strong>100%</strong> медична стерильність інструментів</div>
-                <div className="fact-item"><strong>Premium-бар</strong> свіжозмелена кава та міцні напої</div>
+                <div className="fact-item"><strong>15,000+</strong> {t.factClients}</div>
+                <div className="fact-item"><strong>100%</strong> {t.factSterile}</div>
+                <div className="fact-item"><strong>Premium-бар</strong> {t.factBar}</div>
               </div>
             </div>
           </section>
@@ -251,52 +369,56 @@ function App() {
       {/* ВКЛАДКА: ЗАПИСАТИСЬ */}
       {activeTab === 'booking' && view === 'client' && (
         <div className="booking-page">
-          <h1 className="main-title">Оберіть свого майстра</h1>
+          <h1 className="main-title">{t.chooseBarberTitle}</h1>
           <div className="barber-container">
             {barbers.map(barber => (
               <div key={barber.id} className="barber-card">
                 <img src={barber.photo_url} alt={barber.name} />
-                <div className="exp-badge">Стаж: {barber.experience}</div>
-                <h3>{barber.name}</h3>
-                <p className="rank-text">{barber.rank}</p>
-                <p className="spec-text">{barber.specialization}</p>
-                <button className="book-btn" onClick={() => setSelectedBarber(barber)}>Обрати майстра</button>
+                {/* Динамічний переклад стажу роботи */}
+                <div className="exp-badge">{t.experience}: {translateDbText(barber.experience)}</div>
+                {/* Динамічний переклад імені майстра */}
+                <h3>{translateDbText(barber.name)}</h3>
+                {/* Динамічний переклад професійного рангу */}
+                <p className="rank-text">{translateDbText(barber.rank)}</p>
+                {/* Динамічний переклад спеціалізації майстра */}
+                <p className="spec-text">{translateDbText(barber.specialization)}</p>
+                <button className="book-btn" onClick={() => setSelectedBarber(barber)}>{t.selectBarberBtn}</button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* МОДАЛЬНЕ ВІКНО З ФОРМОЮ */}
+      {/* МОДАЛЬНЕ ВІКНО З ФОРМОЮ БРОНЮВАННЯ */}
       {selectedBarber && view === 'client' && (
         <div className="modal">
           <div className="modal-content booking-modal">
             <div className="booking-flex">
               <div className="booking-form-side">
-                <h2>Ваш візит до: {selectedBarber.name}</h2>
+                <h2>{t.modalTitle}: {translateDbText(selectedBarber.name)}</h2>
                 <form onSubmit={handleBooking}>
-                  <input type="text" placeholder="Введіть ваше ім'я" required value={formData.name} onChange={handleNameChange} />
-                  <input type="text" placeholder="Номер телефону" required value={formData.phone} onChange={handlePhoneChange} />
+                  <input type="text" placeholder={t.inputName} required value={formData.name} onChange={handleNameChange} />
+                  <input type="text" placeholder={t.inputPhone} required value={formData.phone} onChange={handlePhoneChange} />
                   
                   <select required className="service-select" value={selectedService} onChange={(e) => setSelectedService(e.target.value)}>
-                    <option value="">Виберіть необхідну послугу</option>
+                    <option value="">{t.selectServicePlaceholder}</option>
                     {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.price} грн — {s.duration})</option>)}
                   </select>
                   
-                  <label className="input-label">Бажана дата та час початку візиту:</label>
+                  <label className="input-label">{t.labelDateTime}</label>
                   <input type="datetime-local" required className="date-input" min={new Date().toISOString().slice(0, 16)} value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
                   
-                  <textarea placeholder="Особливі побажання до майстра або коментар..." className="comment-textarea" value={formData.comment} onChange={(e) => setFormData({...formData, comment: e.target.value})}></textarea>
+                  <textarea placeholder={t.commentPlaceholder} className="comment-textarea" value={formData.comment} onChange={(e) => setFormData({...formData, comment: e.target.value})}></textarea>
                   
                   <div className="modal-actions" style={{display: 'flex', gap: '10px'}}>
-                    <button type="submit" className="confirm-btn">Підтвердити запис</button>
-                    <button type="button" className="cancel-btn" onClick={() => setSelectedBarber(null)}>Скасувати</button>
+                    <button type="submit" className="confirm-btn">{t.confirmBookingBtn}</button>
+                    <button type="button" className="cancel-btn" onClick={() => setSelectedBarber(null)}>{t.cancelBtn}</button>
                   </div>
                 </form>
               </div>
 
               <div className="busy-times-side">
-                <h3>Зайняті слоти:</h3>
+                <h3>{t.busySlotsTitle}</h3>
                 <div className="times-list">
                   {appointments.filter(app => app.barber_id === selectedBarber.id && new Date(app.appointment_date) > new Date()).map(app => (
                     <div key={app.id} className="busy-slot">
@@ -360,7 +482,7 @@ function App() {
                 <tr key={app.id}>
                   <td>{app.client_name}</td>
                   <td>{app.client_phone}</td>
-                  <td>{app.barber_name}</td>
+                  <td>{translateDbText(app.barber_name)}</td>
                   <td>{app.service_name}</td>
                   <td>{new Date(app.appointment_date).toLocaleString()}</td>
                   <td>{app.client_comment}</td>
@@ -379,7 +501,7 @@ function App() {
             <form onSubmit={handleAddAbsence} className="absence-form" style={{marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
               <select required value={newAbsence.barber_id} onChange={e => setNewAbsence({...newAbsence, barber_id: e.target.value})}>
                 <option value="">Оберіть майстра</option>
-                {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                {barbers.map(b => <option key={b.id} value={b.id}>{translateDbText(b.name)}</option>)}
               </select>
               <input type="datetime-local" required value={newAbsence.start_date} onChange={e => setNewAbsence({...newAbsence, start_date: e.target.value})} />
               <input type="datetime-local" required value={newAbsence.end_date} onChange={e => setNewAbsence({...newAbsence, end_date: e.target.value})} />
@@ -400,7 +522,7 @@ function App() {
               <tbody>
                 {absences.map(abs => (
                   <tr key={abs.id}>
-                    <td>{abs.barber_name}</td>
+                    <td>{translateDbText(abs.barber_name)}</td>
                     <td>{new Date(abs.start_date).toLocaleString()}</td>
                     <td>{new Date(abs.end_date).toLocaleString()}</td>
                     <td>{abs.reason}</td>
