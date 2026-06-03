@@ -39,7 +39,9 @@ const translations = {
     greeting: "Вітаємо",
     adminToSite: "До сайту",
     adminPanel: "Панель керування",
-    logout: "Вийти"
+    logout: "Вийти",
+    copyright: "© 2026 BRITVA Barbershop. Всі права захищені.",
+    author: "Розробник системи: Дольнік Дмитро Олександрович (Група 45)"
   },
   en: {
     title: "BRITVA",
@@ -76,7 +78,9 @@ const translations = {
     greeting: "Welcome",
     adminToSite: "To Site",
     adminPanel: "Admin Panel",
-    logout: "Logout"
+    logout: "Logout",
+    copyright: "© 2026 BRITVA Barbershop. All rights reserved.",
+    author: "System Developer: Dmytro Dolnik (Group 45)"
   }
 };
 
@@ -536,6 +540,12 @@ function App() {
           </div>
         </main>
       )}
+
+      {/* ФУТЕР ІЗ КОПІРАЙТОМ ТА ІНФОРМАЦІЄЮ ПРО АВТОРА */}
+      <footer className="site-footer" style={{ marginTop: '50px', padding: '20px', borderTop: '1px solid #222', textAlign: 'center', backgroundColor: '#111' }}>
+        <p style={{ color: '#ffcc00', margin: '0 0 5px 0', fontSize: '1rem', letterSpacing: '1px' }}>{t.author}</p>
+        <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>{t.copyright}</p>
+      </footer>
     </div>
   );
 }
