@@ -84,33 +84,48 @@ const translations = {
   }
 };
 
-// 2. Мапа перекладів динамічних даних, що прилітають із бази даних MySQL
+// 2. Мапа перекладів динамічних даних із бази даних
 const dbTranslations = {
   en: {
-    // Імена майстрів
     "Олександр Степашко": "Oleksandr Stepashko",
     "Маркус Тейлор": "Marcus Taylor",
     "Микита Феничко": "Mykyta Fenychko",
-    // Ранги майстрів
     "Топ-барбер": "Top Barber",
     "Старший майстер": "Senior Barber",
     "Барбер": "Barber",
-    // Стаж роботи
     "5 років": "5 years",
     "3 роки": "3 years",
     "4 роки": "4 years",
-    // Спеціалізації
     "Експерт з догляду за бородою та класичних стрижок": "Expert in beard care and classic haircuts",
     "Майстер сучасних технік фейду та Hair Tattoo": "Master of modern fade techniques and Hair Tattoo",
     "Майстер подовжених стрижок та класичного гоління": "Master of long haircuts and classic straight shaving"
   }
 };
 
+// Автоматична генерація слотів від 09:00 до 17:00 з кроком 15 хвилин
+const generateTimeSlots = () => {
+  const slots = [];
+  let hour = 9;
+  let minute = 0;
+  while (hour < 17 || (hour === 17 && minute === 0)) {
+    const hStr = hour.toString().padStart(2, '0');
+    const mStr = minute.toString().padStart(2, '0');
+    slots.push(`${hStr}:${mStr}`);
+    minute += 15;
+    if (minute === 60) {
+      minute = 0;
+      hour += 1;
+    }
+  }
+  return slots;
+};
+
+const availableTimeSlots = generateTimeSlots();
+
 function App() {
   const [lang, setLang] = useState('ua');
   const t = translations[lang];
 
-  // Функція для підміни українського тексту з БД на англійський, якщо обрано режим 'en'
   const translateDbText = (text) => {
     if (lang === 'en' && dbTranslations.en[text]) {
       return dbTranslations.en[text];
@@ -122,6 +137,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('home'); // 'home' або 'booking'
   const [view, setView] = useState('client'); // 'client', 'auth', 'admin'
   const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Дані з БД
   const [barbers, setBarbers] = useState([]);
@@ -137,7 +153,8 @@ function App() {
   // Стан бронювання візиту
   const [selectedBarber, setSelectedBarber] = useState(null);
   const [selectedService, setSelectedService] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
+  const [bookingDate, setBookingDate] = useState('');
+  const [bookingTime, setBookingTime] = useState('09:00');
   const [formData, setFormData] = useState({ name: '', phone: '+380', comment: '' });
 
   // Стан адмін-панелі для блокування
@@ -211,12 +228,35 @@ function App() {
     const service = services.find(s => s.id === parseInt(selectedService));
     if (!service) return;
 
+    if (!bookingDate) {
+      alert("Будь ласка, оберіть дату візиту.");
+      return;
+    }
+
+    // Захист від запису на минулі дні
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    if (bookingDate < todayStr) {
+      alert("Помилка: Неможливо записатися на минулу дату!");
+      return;
+    }
+
+    const appointmentDateTimeStr = `${bookingDate}T${bookingTime}`;
+    const startTime = new Date(appointmentDateTimeStr);
+
+    // Захист від запису на час, який сьогодні вже минув
+    if (bookingDate === todayStr) {
+      const now = new Date();
+      if (startTime < now) {
+        alert("Помилка: Цей час на сьогодні вже минув. Оберіть пізніший слот.");
+        return;
+      }
+    }
+
     let durationMinutes = 60;
     if (service.duration.includes('1.5')) durationMinutes = 90;
     else if (service.duration.includes('30')) durationMinutes = 30;
     else if (service.duration.includes('45')) durationMinutes = 45;
 
-    const startTime = new Date(selectedDate);
     const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
     
     const startHour = startTime.getHours();
@@ -243,7 +283,7 @@ function App() {
       client_phone: formData.phone,
       barber_id: selectedBarber.id,
       service_id: selectedService,
-      appointment_date: selectedDate,
+      appointment_date: appointmentDateTimeStr,
       client_comment: formData.comment
     })
     .then(() => {
@@ -251,7 +291,8 @@ function App() {
       setSelectedBarber(null);
       setFormData({ name: '', phone: '+380', comment: '' });
       setSelectedService('');
-      setSelectedDate('');
+      setBookingDate('');
+      setBookingTime('09:00');
       fetchAppointments();
     })
     .catch(err => alert(err.response?.data?.message || "Помилка при створенні запису. Спробуйте ще раз."));
@@ -269,67 +310,158 @@ function App() {
     }
   };
 
-  // Адмін: Додавання відсутності майстра
+  // Валідація дат перед відправкою на бекенд, щоб вони не дублювалися
   const handleAddAbsence = (e) => {
     e.preventDefault();
+    
+    const startLog = new Date(newAbsence.start_date);
+    const endLog = new Date(newAbsence.end_date);
+
+    if (startLog >= endLog) {
+      alert("Помилка: Дата та час закінчення блокування мають бути пізнішими за дату початку!");
+      return;
+    }
+
     axios.post('https://britva-barbershop-website.onrender.com/api/absences', newAbsence)
         .then(() => {
-            alert("Статус майстра оновлено");
+            alert("Статус майстра успішно оновлено!");
             fetchAbsences();
             setNewAbsence({ barber_id: '', start_date: '', end_date: '', reason: '' });
         })
         .catch(err => alert("Помилка при додаванні відсутності"));
   };
 
-  // Адмін: Видалення відсутності майстра
   const handleDeleteAbsence = (id) => {
-    axios.delete(`https://britva-barbershop-website.onrender.com/api/absences/${id}`)
-        .then(() => {
-            setAbsences(prev => prev.filter(abs => abs.id !== id));
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Помилка при видаленні. Перевірте, чи запущено сервер!");
-        });
+    if (window.confirm("Видалити це блокування часу?")) {
+      axios.delete(`https://britva-barbershop-website.onrender.com/api/absences/${id}`)
+          .then(() => {
+              setAbsences(prev => prev.filter(abs => abs.id !== id));
+          })
+          .catch(err => alert("Помилка при видаленні блокування."));
+    }
   };
+
+  const handleNavClick = (tab) => {
+    setActiveTab(tab);
+    setView('client');
+    setIsMobileMenuOpen(false);
+  };
+
+  // Комплексна і точна фільтрація зарезервованих слотів (Записи + Відпустки)
+  const getFilteredTimeSlots = () => {
+    if (!bookingDate || !selectedBarber) return availableTimeSlots;
+
+    const dayAppointments = appointments.filter(app => {
+      if (app.barber_id !== selectedBarber.id) return false;
+      return app.appointment_date.split('T')[0] === bookingDate;
+    });
+
+    const dayAbsences = absences.filter(abs => {
+      if (abs.barber_id !== selectedBarber.id) return false;
+      
+      const absStartDay = abs.start_date.split('T')[0];
+      const absEndDay = abs.end_date.split('T')[0];
+      
+      return bookingDate >= absStartDay && bookingDate <= absEndDay;
+    });
+
+    return availableTimeSlots.filter(slot => {
+      const slotStart = new Date(`${bookingDate}T${slot}:00`);
+
+      // Якщо день сьогоднішній, то слоти, час яких вже минув, теж прибираємо
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      if (bookingDate === todayStr && slotStart < new Date()) {
+        return false;
+      }
+
+      const isBusyByAppointment = dayAppointments.some(app => {
+        const appStart = new Date(app.appointment_date);
+        let appDuration = 60;
+        if (app.service_name && (app.service_name.includes('1.5') || app.service_name.includes('90'))) appDuration = 90;
+        else if (app.service_name && app.service_name.includes('30')) appDuration = 30;
+        else if (app.service_name && app.service_name.includes('45')) appDuration = 45;
+
+        const appEnd = new Date(appStart.getTime() + appDuration * 60000);
+        return slotStart >= appStart && slotStart < appEnd;
+      });
+
+      const isBusyByAbsence = dayAbsences.some(abs => {
+        const absStart = new Date(abs.start_date);
+        const absEnd = new Date(abs.end_date);
+        return slotStart >= absStart && slotStart < absEnd;
+      });
+
+      return !isBusyByAppointment && !isBusyByAbsence;
+    });
+  };
+
+  const filteredSlots = getFilteredTimeSlots();
+
+  // Визначення причини повного закриття дня (для виведення тексту у червону плашку)
+  const getDayBlockingReason = () => {
+    if (!bookingDate || !selectedBarber || filteredSlots.length > 0) return null;
+
+    const activeAbsence = absences.find(abs => {
+      if (abs.barber_id !== selectedBarber.id) return false;
+      const absStartDay = abs.start_date.split('T')[0];
+      const absEndDay = abs.end_date.split('T')[0];
+      return bookingDate >= absStartDay && bookingDate <= absEndDay;
+    });
+
+    if (activeAbsence) {
+      return `Майстер недоступний (${activeAbsence.reason || 'планова відпустка'})`;
+    }
+
+    return "Всі слоти на цей день повністю заброньовані";
+  };
+
+  const blockingReason = getDayBlockingReason();
 
   return (
     <div className="App">
-      {/* ВЕРХНЯ НАВІГАЦІЯ */}
+      {/* НАВІГАЦІЯ */}
       <header className="navbar">
-        <div className="logo" onClick={() => { setActiveTab('home'); setView('client'); }}>{t.title}</div>
-        <nav className="nav-links">
-          <button className={activeTab === 'home' && view === 'client' ? 'active' : ''} onClick={() => { setActiveTab('home'); setView('client'); }}>{t.home}</button>
-          <button className={activeTab === 'booking' && view === 'client' ? 'active' : ''} onClick={() => { setActiveTab('booking'); setView('client'); }}>{t.booking}</button>
+        <div className="logo" onClick={() => { setActiveTab('home'); setView('client'); setIsMobileMenuOpen(false); }}>{t.title}</div>
+        
+        <div className={`burger-icon ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <span className="burger-line"></span>
+          <span className="burger-line"></span>
+          <span className="burger-line"></span>
+        </div>
+
+        <nav className={`nav-links ${isMobileMenuOpen ? 'active' : ''}`}>
+          <div className="menu-buttons-group">
+            <button className={activeTab === 'home' && view === 'client' ? 'active' : ''} onClick={() => handleNavClick('home')}>{t.home}</button>
+            <button className={activeTab === 'booking' && view === 'client' ? 'active' : ''} onClick={() => handleNavClick('booking')}>{t.booking}</button>
+          </div>
+          
+          <div className="lang-switcher" style={{ display: 'flex', gap: '10px', marginLeft: '20px', alignItems: 'center' }}>
+            <button onClick={() => { setLang('ua'); setIsMobileMenuOpen(false); }} style={{ background: 'none', border: 'none', color: lang === 'ua' ? '#ffcc00' : '#fff', cursor: 'pointer', fontFamily: 'Oswald', fontWeight: 'bold', fontSize: '1.1rem' }}>UA</button>
+            <span style={{ color: '#333' }}>|</span>
+            <button onClick={() => { setLang('en'); setIsMobileMenuOpen(false); }} style={{ background: 'none', border: 'none', color: lang === 'en' ? '#ffcc00' : '#fff', cursor: 'pointer', fontFamily: 'Oswald', fontWeight: 'bold', fontSize: '1.1rem' }}>EN</button>
+          </div>
+          
+          <div className="auth-zone-header">
+            {currentUser ? (
+              <div className="user-logged-zone">
+                <span className="user-greeting">{t.greeting}, <strong>{currentUser.username}</strong>!</span>
+                {currentUser.role === 'admin' && (
+                  <button onClick={() => { setView(view === 'admin' ? 'client' : 'admin'); setIsMobileMenuOpen(false); }} className="admin-badge-btn">
+                    {view === 'admin' ? t.adminToSite : t.adminPanel}
+                  </button>
+                )}
+                <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="logout-btn">{t.logout}</button>
+              </div>
+            ) : (
+              <button className="admin-btn" onClick={() => { setView('auth'); setIsMobileMenuOpen(false); }}>
+                {t.cabinet}
+              </button>
+            )}
+          </div>
         </nav>
-        
-        {/* КНОПКИ ПЕРЕМИКАННЯ МОВИ */}
-        <div className="lang-switcher" style={{ display: 'flex', gap: '10px', marginLeft: '20px', alignItems: 'center' }}>
-          <button onClick={() => setLang('ua')} style={{ background: 'none', border: 'none', color: lang === 'ua' ? '#ffcc00' : '#fff', cursor: 'pointer', fontFamily: 'Oswald', fontWeight: 'bold', fontSize: '1.1rem' }}>UA</button>
-          <span style={{ color: '#333' }}>|</span>
-          <button onClick={() => setLang('en')} style={{ background: 'none', border: 'none', color: lang === 'en' ? '#ffcc00' : '#fff', cursor: 'pointer', fontFamily: 'Oswald', fontWeight: 'bold', fontSize: '1.1rem' }}>EN</button>
-        </div>
-        
-        <div className="auth-zone-header">
-          {currentUser ? (
-            <div className="user-logged-zone">
-              <span className="user-greeting">{t.greeting}, <strong>{currentUser.username}</strong>!</span>
-              {currentUser.role === 'admin' && (
-                <button onClick={() => setView(view === 'admin' ? 'client' : 'admin')} className="admin-badge-btn">
-                  {view === 'admin' ? t.adminToSite : t.adminPanel}
-                </button>
-              )}
-              <button onClick={handleLogout} className="logout-btn">{t.logout}</button>
-            </div>
-          ) : (
-            <button className="admin-btn" onClick={() => setView('auth')}>
-              {t.cabinet}
-            </button>
-          )}
-        </div>
       </header>
 
-      {/* ВКЛАДКА: ГОЛОВНА */}
+      {/* ГОЛОВНА СТОРІНКА */}
       {activeTab === 'home' && view === 'client' && (
         <div className="home-page">
           <section className="hero-section">
@@ -370,7 +502,7 @@ function App() {
         </div>
       )}
 
-      {/* ВКЛАДКА: ЗАПИСАТИСЬ */}
+      {/* ОНЛАЙН ЗАПИС */}
       {activeTab === 'booking' && view === 'client' && (
         <div className="booking-page">
           <h1 className="main-title">{t.chooseBarberTitle}</h1>
@@ -378,13 +510,9 @@ function App() {
             {barbers.map(barber => (
               <div key={barber.id} className="barber-card">
                 <img src={barber.photo_url} alt={barber.name} />
-                {/* Динамічний переклад стажу роботи */}
                 <div className="exp-badge">{t.experience}: {translateDbText(barber.experience)}</div>
-                {/* Динамічний переклад імені майстра */}
                 <h3>{translateDbText(barber.name)}</h3>
-                {/* Динамічний переклад професійного рангу */}
                 <p className="rank-text">{translateDbText(barber.rank)}</p>
-                {/* Динамічний переклад спеціалізації майстра */}
                 <p className="spec-text">{translateDbText(barber.specialization)}</p>
                 <button className="book-btn" onClick={() => setSelectedBarber(barber)}>{t.selectBarberBtn}</button>
               </div>
@@ -393,7 +521,7 @@ function App() {
         </div>
       )}
 
-      {/* МОДАЛЬНЕ ВІКНО З ФОРМОЮ БРОНЮВАННЯ */}
+      {/* МОДАЛКА ЗАПИСУ З ДИНАМІЧНИМ ВИВЕДЕННЯМ ПРИЧИН БЛОКУВАННЯ */}
       {selectedBarber && view === 'client' && (
         <div className="modal">
           <div className="modal-content booking-modal">
@@ -410,12 +538,42 @@ function App() {
                   </select>
                   
                   <label className="input-label">{t.labelDateTime}</label>
-                  <input type="datetime-local" required className="date-input" min={new Date().toISOString().slice(0, 16)} value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                    <input 
+                      type="date" 
+                      required 
+                      className="date-input" 
+                      min={new Date().toLocaleDateString('en-CA')} 
+                      value={bookingDate} 
+                      onChange={(e) => setBookingDate(e.target.value)} 
+                      style={{ flex: 1, marginBottom: 0 }}
+                    />
+                    
+                    {blockingReason ? (
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#222', border: '1px solid #ff4444', color: '#ff4444', borderRadius: '5px', padding: '0 10px', fontSize: '0.9rem', fontWeight: 'bold', textAlign: 'center' }}>
+                        {blockingReason}
+                      </div>
+                    ) : (
+                      <select 
+                        required 
+                        className="service-select" 
+                        value={bookingTime} 
+                        onChange={(e) => setBookingTime(e.target.value)}
+                        style={{ flex: 1, marginBottom: 0 }}
+                      >
+                        {filteredSlots.map(time => (
+                          <option key={time} value={time}>{time}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                   
                   <textarea placeholder={t.commentPlaceholder} className="comment-textarea" value={formData.comment} onChange={(e) => setFormData({...formData, comment: e.target.value})}></textarea>
                   
                   <div className="modal-actions" style={{display: 'flex', gap: '10px'}}>
-                    <button type="submit" className="confirm-btn">{t.confirmBookingBtn}</button>
+                    <button type="submit" className="confirm-btn" disabled={!!blockingReason}>
+                      {t.confirmBookingBtn}
+                    </button>
                     <button type="button" className="cancel-btn" onClick={() => setSelectedBarber(null)}>{t.cancelBtn}</button>
                   </div>
                 </form>
@@ -436,7 +594,7 @@ function App() {
         </div>
       )}
 
-      {/* ЕКРАН АВТЕНТИФІКАЦІЇ */}
+      {/* АВТОРИЗАЦІЯ */}
       {view === 'auth' && (
         <div className="login-container">
           <div className="modal-content admin-login-card">
@@ -457,7 +615,7 @@ function App() {
                 <button type="button" className="cancel-btn" onClick={() => setView('client')}>Повернутись</button>
               </div>
               
-              <p className="toggle-auth-mode" onClick={() => setIsRegisterMode(!isRegisterMode)} style={{cursor: 'pointer', marginTop: '15px', color: '#cca353', textAlign: 'center'}}>
+              <p className="toggle-auth-mode" onClick={() => setIsRegisterMode(!isRegisterMode)}>
                 {isRegisterMode ? "Вже є зареєстрований профіль? Авторизуватись" : "Вперше у нас? Створити новий акаунт"}
               </p>
             </form>
@@ -465,7 +623,7 @@ function App() {
         </div>
       )}
 
-      {/* ПАНЕЛЬ АДМІНІСТРАТОРА */}
+      {/* АДМІН-ПАНЕЛЬ */}
       {view === 'admin' && currentUser?.role === 'admin' && (
         <main className="admin-main" style={{padding: '40px', color: '#fff'}}>
           <h2>Електронний журнал записів клієнтів</h2>
@@ -488,7 +646,7 @@ function App() {
                   <td>{app.client_phone}</td>
                   <td>{translateDbText(app.barber_name)}</td>
                   <td>{app.service_name}</td>
-                  <td>{new Date(app.appointment_date).toLocaleString()}</td>
+                  <td>{new Date(app.appointment_date).toLocaleString('uk-UA')}</td>
                   <td>{app.client_comment}</td>
                   <td>
                     <button className="cancel-btn" style={{padding: '5px 10px', fontSize: '12px'}} onClick={() => handleDeleteAppointment(app.id)}>
@@ -507,8 +665,8 @@ function App() {
                 <option value="">Оберіть майстра</option>
                 {barbers.map(b => <option key={b.id} value={b.id}>{translateDbText(b.name)}</option>)}
               </select>
-              <input type="datetime-local" required value={newAbsence.start_date} onChange={e => setNewAbsence({...newAbsence, start_date: e.target.value})} />
-              <input type="datetime-local" required value={newAbsence.end_date} onChange={e => setNewAbsence({...newAbsence, end_date: e.target.value})} />
+              <input type="datetime-local" required value={newAbsence.start_date} onChange={e => setNewAbsence({...newAbsence, start_date: e.target.value})} step="900" />
+              <input type="datetime-local" required value={newAbsence.end_date} onChange={e => setNewAbsence({...newAbsence, end_date: e.target.value})} step="900" />
               <input type="text" placeholder="Обґрунтування (відпустка, лікарняний, навчання)" value={newAbsence.reason} onChange={e => setNewAbsence({...newAbsence, reason: e.target.value})} />
               <button type="submit" className="confirm-btn">Заблокувати години</button>
             </form>
@@ -527,8 +685,8 @@ function App() {
                 {absences.map(abs => (
                   <tr key={abs.id}>
                     <td>{translateDbText(abs.barber_name)}</td>
-                    <td>{new Date(abs.start_date).toLocaleString()}</td>
-                    <td>{new Date(abs.end_date).toLocaleString()}</td>
+                    <td>{new Date(abs.start_date).toLocaleString('uk-UA')}</td>
+                    <td>{new Date(abs.end_date).toLocaleString('uk-UA')}</td>
                     <td>{abs.reason}</td>
                     <td>
                       <button className="cancel-btn" style={{padding: '5px 10px'}} onClick={() => handleDeleteAbsence(abs.id)}>Зняти блок</button>
@@ -541,7 +699,7 @@ function App() {
         </main>
       )}
 
-      {/* ФУТЕР ІЗ КОПІРАЙТОМ ТА ІНФОРМАЦІЄЮ ПРО АВТОРА */}
+      {/* ФУТЕР */}
       <footer className="site-footer" style={{ marginTop: '50px', padding: '20px', borderTop: '1px solid #222', textAlign: 'center', backgroundColor: '#111' }}>
         <p style={{ color: '#ffcc00', margin: '0 0 5px 0', fontSize: '1rem', letterSpacing: '1px' }}>{t.author}</p>
         <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>{t.copyright}</p>
