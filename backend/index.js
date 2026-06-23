@@ -5,20 +5,17 @@ const moment = require('moment');
 
 const app = express();
 
-// 1. Налаштування CORS
 app.use(cors());
-
-// 2. Налаштування JSON парсера
 app.use(express.json());
 
-// 3. Підключення до бази даних MySQL
 const dbConfig = process.env.DATABASE_URL ? process.env.DATABASE_URL : {
     host: 'zephyr.proxy.rlwy.net',
     port: 38037,
     user: 'root',
     password: 'phQEGbODbmwaFTwhqJcQgyrvtKRtRiis',
     database: 'railway',
-    multipleStatements: true
+    multipleStatements: true,
+    dateStrings: true
 };
 
 const db = mysql.createConnection(dbConfig);
@@ -29,7 +26,6 @@ db.connect((err) => {
         return;
     }
     console.log('Підключено до MySQL (britva_db)!');
-    
     initDatabase();
 });
 
@@ -112,7 +108,6 @@ function initDatabase() {
     });
 }
 
-// 4. Мідлвар: Автоматичне видалення завершених записів (минулих за часом) при кожному запиті
 app.use((req, res, next) => {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     db.query('DELETE FROM appointments WHERE appointment_date < ?', [now], (err, result) => {
@@ -121,10 +116,6 @@ app.use((req, res, next) => {
     });
 });
 
-
-// === АВТЕНТИФІКАЦІЯ (РЕЄСТРАЦІЯ ТА ЛОГІН) ===
-
-// Реєстрація нового користувача
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -143,7 +134,6 @@ app.post('/api/register', (req, res) => {
     });
 });
 
-// Логін (перевірка користувача або адміна)
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     
@@ -152,7 +142,6 @@ app.post('/api/login', (req, res) => {
         if (err) return res.status(500).json(err);
         
         if (results.length > 0) {
-            // Повертаємо дані користувача (id, логін та роль)
             res.json({ 
                 success: true, 
                 user: { 
@@ -167,10 +156,6 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-
-// === РОБОТА ІЗ ЗАПИСАМИ (APPOINTMENTS) ===
-
-// Отримати всі записи (для адмінки)
 app.get('/api/appointments', (req, res) => {
     const query = `
         SELECT appointments.*, barbers.name as barber_name, services.name as service_name 
@@ -185,7 +170,6 @@ app.get('/api/appointments', (req, res) => {
     });
 });
 
-// Створити новий запис на стрижку
 app.post('/api/appointments', (req, res) => {
     const { client_name, client_phone, barber_id, service_id, appointment_date, client_comment } = req.body;
     
@@ -200,14 +184,12 @@ app.post('/api/appointments', (req, res) => {
         const start = moment(appointment_date);
         const end = moment(appointment_date).add(durationMinutes, 'minutes');
 
-        // Перевірка графіка відсутності майстра
         const absenceQuery = 'SELECT * FROM barber_absences WHERE barber_id = ? AND ? < end_date AND ? > start_date';
         db.query(absenceQuery, [barber_id, end.format('YYYY-MM-DD HH:mm:ss'), start.format('YYYY-MM-DD HH:mm:ss')], (err, absences) => {
             if (absences && absences.length > 0) {
                 return res.status(400).json({ message: `Майстер недоступний у цей час (Причина: ${absences[0].reason})` });
             }
             
-            // Перевірка накладки на інші записи
             const checkQuery = `
                 SELECT a.appointment_date, s.duration 
                 FROM appointments a
@@ -244,7 +226,6 @@ app.post('/api/appointments', (req, res) => {
     });
 });
 
-// Ручне видалення запису клієнта з адмінки
 app.delete('/api/appointments/:id', (req, res) => {
     const { id } = req.params;
     db.query('DELETE FROM appointments WHERE id = ?', [id], (err, result) => {
@@ -252,9 +233,6 @@ app.delete('/api/appointments/:id', (req, res) => {
         res.json({ message: "Запис успішно видалено" });
     });
 });
-
-
-// === ДАНІ ПРО МАЙСТРІВ ТА ПОСЛУГИ ===
 
 app.get('/api/barbers', (req, res) => {
     db.query('SELECT * FROM barbers', (err, results) => {
@@ -269,9 +247,6 @@ app.get('/api/services', (req, res) => {
         res.json(results);
     });
 });
-
-
-// === КЕРУВАННЯ ВІДСУТНІСТЮ МАЙСТРІВ (ABSENCES) ===
 
 app.get('/api/absences', (req, res) => {
     const query = 'SELECT ba.*, b.name as barber_name FROM barber_absences ba JOIN barbers b ON ba.barber_id = b.id';
@@ -297,8 +272,6 @@ app.delete('/api/absences/:id', (req, res) => {
     });
 });
 
-
-// 5. Запуск сервера
 app.listen(5000, () => {
     console.log('Бекенд сервер працює на порту 5000');
 });

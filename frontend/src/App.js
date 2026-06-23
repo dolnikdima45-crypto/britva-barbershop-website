@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
-// 1. Словник перекладів для статичного інтерфейсу сайту та адмінки
 const translations = {
   ua: {
     title: "BRITVA",
@@ -84,7 +83,6 @@ const translations = {
   }
 };
 
-// 2. Мапа перекладів динамічних даних із бази даних
 const dbTranslations = {
   en: {
     "Олександр Степашко": "Oleksandr Stepashko",
@@ -102,7 +100,6 @@ const dbTranslations = {
   }
 };
 
-// Автоматична генерація слотів від 09:00 до 17:00 з кроком 15 хвилин
 const generateTimeSlots = () => {
   const slots = [];
   let hour = 9;
@@ -133,34 +130,28 @@ function App() {
     return text;
   };
 
-  // Навігація та вкладки
-  const [activeTab, setActiveTab] = useState('home'); // 'home' або 'booking'
-  const [view, setView] = useState('client'); // 'client', 'auth', 'admin'
+  const [activeTab, setActiveTab] = useState('home');
+  const [view, setView] = useState('client');
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Дані з БД
   const [barbers, setBarbers] = useState([]);
   const [services, setServices] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [absences, setAbsences] = useState([]);
 
-  // Дані поточної сесії користувача
   const [currentUser, setCurrentUser] = useState(null); 
   const [authLogin, setAuthLogin] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   
-  // Стан бронювання візиту
   const [selectedBarber, setSelectedBarber] = useState(null);
   const [selectedService, setSelectedService] = useState('');
   const [bookingDate, setBookingDate] = useState('');
   const [bookingTime, setBookingTime] = useState('09:00');
   const [formData, setFormData] = useState({ name: '', phone: '+380', comment: '' });
 
-  // Стан адмін-панелі для блокування
   const [newAbsence, setNewAbsence] = useState({ barber_id: '', start_date: '', end_date: '', reason: '' });
 
-  // Завантаження базових даних
   useEffect(() => {
     axios.get('https://britva-barbershop-website.onrender.com/api/barbers').then(res => setBarbers(res.data));
     axios.get('https://britva-barbershop-website.onrender.com/api/services').then(res => setServices(res.data));
@@ -176,7 +167,6 @@ function App() {
     axios.get('https://britva-barbershop-website.onrender.com/api/absences').then(res => setAbsences(res.data));
   };
 
-  // Валідатори введення інформації
   const handleNameChange = (e) => {
     const val = e.target.value;
     const filteredName = val.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄґҐ\s]/g, '');
@@ -190,7 +180,6 @@ function App() {
     if (digits.length <= 9) setFormData({ ...formData, phone: '+380' + digits });
   };
 
-  // Логіка Входу та Реєстрації
   const handleAuthSubmit = (e) => {
     e.preventDefault();
     if (isRegisterMode) {
@@ -222,7 +211,6 @@ function App() {
     setActiveTab('home');
   };
 
-  // Клієнтська логіка створення запису
   const handleBooking = (e) => {
     e.preventDefault();
     const service = services.find(s => s.id === parseInt(selectedService));
@@ -233,17 +221,15 @@ function App() {
       return;
     }
 
-    // Захист від запису на минулі дні
     const todayStr = new Date().toLocaleDateString('en-CA');
     if (bookingDate < todayStr) {
       alert("Помилка: Неможливо записатися на минулу дату!");
       return;
     }
 
-    const appointmentDateTimeStr = `${bookingDate}T${bookingTime}`;
-    const startTime = new Date(appointmentDateTimeStr);
+    const appointmentDateTimeStr = `${bookingDate}T${bookingTime}:00`;
+    const startTime = new Date(`${appointmentDateTimeStr}Z`);
 
-    // Захист від запису на час, який сьогодні вже минув
     if (bookingDate === todayStr) {
       const now = new Date();
       if (startTime < now) {
@@ -259,9 +245,9 @@ function App() {
 
     const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
     
-    const startHour = startTime.getHours();
-    const endHour = endTime.getHours();
-    const endMinutes = endTime.getMinutes();
+    const startHour = startTime.getUTCHours();
+    const endHour = endTime.getUTCHours();
+    const endMinutes = endTime.getUTCMinutes();
 
     if (startHour < 9) {
       alert("Наш простір відкривається о 09:00. Будь ласка, оберіть інший час візиту.");
@@ -283,7 +269,7 @@ function App() {
       client_phone: formData.phone,
       barber_id: selectedBarber.id,
       service_id: selectedService,
-      appointment_date: appointmentDateTimeStr,
+      appointment_date: `${bookingDate} ${bookingTime}:00`,
       client_comment: formData.comment
     })
     .then(() => {
@@ -298,7 +284,6 @@ function App() {
     .catch(err => alert(err.response?.data?.message || "Помилка при створенні запису. Спробуйте ще раз."));
   };
 
-  // АДМІН: РУЧНЕ ВИДАЛЕННЯ ЗАПИСУ КЛІЄНТА
   const handleDeleteAppointment = (id) => {
     if (window.confirm("Ви впевнені, що хочете видалити цей запис клієнта?")) {
       axios.delete(`https://britva-barbershop-website.onrender.com/api/appointments/${id}`)
@@ -310,7 +295,6 @@ function App() {
     }
   };
 
-  // Валідація дат перед відправкою на бекенд, щоб вони не дублювалися
   const handleAddAbsence = (e) => {
     e.preventDefault();
     
@@ -347,35 +331,34 @@ function App() {
     setIsMobileMenuOpen(false);
   };
 
-  // Комплексна і точна фільтрація зарезервованих слотів (Записи + Відпустки)
   const getFilteredTimeSlots = () => {
     if (!bookingDate || !selectedBarber) return availableTimeSlots;
 
     const dayAppointments = appointments.filter(app => {
       if (app.barber_id !== selectedBarber.id) return false;
-      return app.appointment_date.split('T')[0] === bookingDate;
+      return app.appointment_date.split(' ')[0] === bookingDate || app.appointment_date.split('T')[0] === bookingDate;
     });
 
     const dayAbsences = absences.filter(abs => {
       if (abs.barber_id !== selectedBarber.id) return false;
       
-      const absStartDay = abs.start_date.split('T')[0];
-      const absEndDay = abs.end_date.split('T')[0];
+      const absStartDay = abs.start_date.split(' ')[0] || abs.start_date.split('T')[0];
+      const absEndDay = abs.end_date.split(' ')[0] || abs.end_date.split('T')[0];
       
       return bookingDate >= absStartDay && bookingDate <= absEndDay;
     });
 
     return availableTimeSlots.filter(slot => {
-      const slotStart = new Date(`${bookingDate}T${slot}:00`);
+      const slotStart = new Date(`${bookingDate}T${slot}:00Z`);
 
-      // Якщо день сьогоднішній, то слоти, час яких вже минув, теж прибираємо
       const todayStr = new Date().toLocaleDateString('en-CA');
       if (bookingDate === todayStr && slotStart < new Date()) {
         return false;
       }
 
       const isBusyByAppointment = dayAppointments.some(app => {
-        const appStart = new Date(app.appointment_date);
+        const cleanDate = app.appointment_date.replace(' ', 'T');
+        const appStart = new Date(cleanDate.endsWith('Z') ? cleanDate : `${cleanDate}Z`);
         let appDuration = 60;
         if (app.service_name && (app.service_name.includes('1.5') || app.service_name.includes('90'))) appDuration = 90;
         else if (app.service_name && app.service_name.includes('30')) appDuration = 30;
@@ -386,8 +369,10 @@ function App() {
       });
 
       const isBusyByAbsence = dayAbsences.some(abs => {
-        const absStart = new Date(abs.start_date);
-        const absEnd = new Date(abs.end_date);
+        const cleanStart = abs.start_date.replace(' ', 'T');
+        const cleanEnd = abs.end_date.replace(' ', 'T');
+        const absStart = new Date(cleanStart.endsWith('Z') ? cleanStart : `${cleanStart}Z`);
+        const absEnd = new Date(cleanEnd.endsWith('Z') ? cleanEnd : `${cleanEnd}Z`);
         return slotStart >= absStart && slotStart < absEnd;
       });
 
@@ -397,14 +382,13 @@ function App() {
 
   const filteredSlots = getFilteredTimeSlots();
 
-  // Визначення причини повного закриття дня (для виведення тексту у червону плашку)
   const getDayBlockingReason = () => {
     if (!bookingDate || !selectedBarber || filteredSlots.length > 0) return null;
 
     const activeAbsence = absences.find(abs => {
       if (abs.barber_id !== selectedBarber.id) return false;
-      const absStartDay = abs.start_date.split('T')[0];
-      const absEndDay = abs.end_date.split('T')[0];
+      const absStartDay = abs.start_date.split(' ')[0] || abs.start_date.split('T')[0];
+      const absEndDay = abs.end_date.split(' ')[0] || abs.end_date.split('T')[0];
       return bookingDate >= absStartDay && bookingDate <= absEndDay;
     });
 
@@ -419,7 +403,6 @@ function App() {
 
   return (
     <div className="App">
-      {/* НАВІГАЦІЯ */}
       <header className="navbar">
         <div className="logo" onClick={() => { setActiveTab('home'); setView('client'); setIsMobileMenuOpen(false); }}>{t.title}</div>
         
@@ -461,7 +444,6 @@ function App() {
         </nav>
       </header>
 
-      {/* ГОЛОВНА СТОРІНКА */}
       {activeTab === 'home' && view === 'client' && (
         <div className="home-page">
           <section className="hero-section">
@@ -502,7 +484,6 @@ function App() {
         </div>
       )}
 
-      {/* ОНЛАЙН ЗАПИС */}
       {activeTab === 'booking' && view === 'client' && (
         <div className="booking-page">
           <h1 className="main-title">{t.chooseBarberTitle}</h1>
@@ -521,7 +502,6 @@ function App() {
         </div>
       )}
 
-      {/* МОДАЛКА ЗАПИСУ З ДИНАМІЧНИМ ВИВЕДЕННЯМ ПРИЧИН БЛОКУВАННЯ */}
       {selectedBarber && view === 'client' && (
         <div className="modal">
           <div className="modal-content booking-modal">
@@ -582,9 +562,12 @@ function App() {
               <div className="busy-times-side">
                 <h3>{t.busySlotsTitle}</h3>
                 <div className="times-list">
-                  {appointments.filter(app => app.barber_id === selectedBarber.id && new Date(app.appointment_date) > new Date()).map(app => (
+                  {appointments.filter(app => app.barber_id === selectedBarber.id && new Date(app.appointment_date.replace(' ', 'T') + 'Z') > new Date()).map(app => (
                     <div key={app.id} className="busy-slot">
-                      {new Date(app.appointment_date).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      {(() => {
+                        const cleanDate = app.appointment_date.replace(' ', 'T');
+                        return new Date(cleanDate.endsWith('Z') ? cleanDate : `${cleanDate}Z`).toLocaleString('uk-UA', { timeZone: 'UTC', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                      })()}
                     </div>
                   ))}
                 </div>
@@ -594,7 +577,6 @@ function App() {
         </div>
       )}
 
-      {/* АВТОРИЗАЦІЯ */}
       {view === 'auth' && (
         <div className="login-container">
           <div className="modal-content admin-login-card">
@@ -623,7 +605,6 @@ function App() {
         </div>
       )}
 
-      {/* АДМІН-ПАНЕЛЬ */}
       {view === 'admin' && currentUser?.role === 'admin' && (
         <main className="admin-main" style={{padding: '40px', color: '#fff'}}>
           <h2>Електронний журнал записів клієнтів</h2>
@@ -646,7 +627,12 @@ function App() {
                   <td>{app.client_phone}</td>
                   <td>{translateDbText(app.barber_name)}</td>
                   <td>{app.service_name}</td>
-                  <td>{new Date(app.appointment_date).toLocaleString('uk-UA')}</td>
+                  <td>
+                    {(() => {
+                      const cleanDate = app.appointment_date.replace(' ', 'T');
+                      return new Date(cleanDate.endsWith('Z') ? cleanDate : `${cleanDate}Z`).toLocaleString('uk-UA', { timeZone: 'UTC' });
+                    })()}
+                  </td>
                   <td>{app.client_comment}</td>
                   <td>
                     <button className="cancel-btn" style={{padding: '5px 10px', fontSize: '12px'}} onClick={() => handleDeleteAppointment(app.id)}>
@@ -685,8 +671,18 @@ function App() {
                 {absences.map(abs => (
                   <tr key={abs.id}>
                     <td>{translateDbText(abs.barber_name)}</td>
-                    <td>{new Date(abs.start_date).toLocaleString('uk-UA')}</td>
-                    <td>{new Date(abs.end_date).toLocaleString('uk-UA')}</td>
+                    <td>
+                      {(() => {
+                        const cleanDate = abs.start_date.replace(' ', 'T');
+                        return new Date(cleanDate.endsWith('Z') ? cleanDate : `${cleanDate}Z`).toLocaleString('uk-UA', { timeZone: 'UTC' });
+                      })()}
+                    </td>
+                    <td>
+                      {(() => {
+                        const cleanDate = abs.end_date.replace(' ', 'T');
+                        return new Date(cleanDate.endsWith('Z') ? cleanDate : `${cleanDate}Z`).toLocaleString('uk-UA', { timeZone: 'UTC' });
+                      })()}
+                    </td>
                     <td>{abs.reason}</td>
                     <td>
                       <button className="cancel-btn" style={{padding: '5px 10px'}} onClick={() => handleDeleteAbsence(abs.id)}>Зняти блок</button>
@@ -699,7 +695,6 @@ function App() {
         </main>
       )}
 
-      {/* ФУТЕР */}
       <footer className="site-footer" style={{ marginTop: '50px', padding: '20px', borderTop: '1px solid #222', textAlign: 'center', backgroundColor: '#111' }}>
         <p style={{ color: '#ffcc00', margin: '0 0 5px 0', fontSize: '1rem', letterSpacing: '1px' }}>{t.author}</p>
         <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>{t.copyright}</p>
